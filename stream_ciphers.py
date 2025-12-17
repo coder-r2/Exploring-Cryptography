@@ -1,11 +1,15 @@
 #Implementation of Stream Ciphers
 
 class Trivium:
-    def __init__(self, key:list[int], iv:list[int]):
-        if len(key) == 80 and len(iv) == 80:
-            self._setup(key, iv)
+    """Trivium stream cipher implementation."""
 
-    def _setup(self, key, iv):
+    def __init__(self, key:list[int], iv:list[int]):
+        """
+        Initializes the state of the Trivium cipher with a key and IV and warms up the cipher.
+        
+        key: List of 80 bits (0s and 1s)
+        iv: List of 80 bits (0s and 1s)
+        """
         self.state = [0]*288
 
         self.state[:80] = key
@@ -13,9 +17,10 @@ class Trivium:
         self.state[285:] = [1,1,1]
 
         for _ in range(1152):
-            self._clock()
+            self._clock()   
 
-    def _clock(self):
+    def _clock(self) -> int:
+        """Clocks the cipher and returns one output bit."""
         ta = self.state[65]^self.state[92]
         tb = self.state[161]^self.state[176]
         tc = self.state[242]^self.state[287]
@@ -30,9 +35,39 @@ class Trivium:
 
         return z
 
-    def keystream(self, length):
+    def keystream(self, length:int) -> list[int]:
+        """Generates a keystream of the specified length in bits."""
         output = []
         for _ in range(length):
             output.append(self._clock())
         return output
     
+class RC4:
+    def __init__(self, key):
+        """
+        Initialises the RC4 cipher with a key.
+
+        key: List of bytes (0-15)
+        """
+        self.S = list(range(256))
+        self.key = key
+        self.key_length = len(key)
+        self.j = 0
+        self.i = 0
+    
+    def _setup(self):
+        """Sets the intial permutation in the state array S."""
+        while self.i < 256:
+            self.j = (self.j + self.S[self.i] + self.key[self.i % 16]) % 256
+            self.S[self.i], self.S[self.j] = self.S[self.j], self.S[self.i]
+
+            self.i += 1
+    
+    def _clock(self) -> int:
+        """Clocks the cipher and returns one byte."""
+        self.i = (self.i + 1) % 256
+        self.j = (self.j + self.S[self.i]) % 256
+        self.S[self.i], self.S[self.j] = self.S[self.j], self.S[self.i]
+
+        output = self.S[(self.S[self.i] + self.S[self.j]) % 256]
+        return output
