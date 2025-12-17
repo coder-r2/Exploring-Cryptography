@@ -38,7 +38,7 @@ class Trivium:
     
 #Auxillary Functions
 def hex_to_bits(hex_str:str) -> list[int]:
-    """Converts hex string to a list of bits (little endian)."""
+    """Converts hex string to a list of bits."""
 
     byte_data = bytes.fromhex(hex_str)
     bits = []
@@ -48,7 +48,7 @@ def hex_to_bits(hex_str:str) -> list[int]:
     return bits
 
 def bits_to_hex(bits:list[int]) -> str:
-    """Converts a list of bits (little endian) to a hex string."""
+    """Converts a list of bits to a hex string."""
 
     hex_str = ''
     for i in range(0, len(bits), 8):
@@ -66,6 +66,9 @@ def main():
 
     key_bits = hex_to_bits(KEY_HEX)
     iv_bits = hex_to_bits(IV_HEX)
+
+    key_bits = key_bits[::-1]
+    iv_bits = iv_bits[::-1]
 
     cipher = Trivium(key_bits, iv_bits)
     output_bits = cipher.keystream(80)
