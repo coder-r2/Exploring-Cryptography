@@ -43,25 +43,30 @@ class Trivium:
         return output
     
 class RC4:
-    def __init__(self, key):
+    def __init__(self, key, drop_bytes=1024):
         """
         Initialises the RC4 cipher with a key.
 
-        key: List of bytes (0-15)
+        key: List of bytes of length < 256
         """
         self.S = list(range(256))
+        self.warmup_bytes = drop_bytes
         self.key = key
         self.key_length = len(key)
         self.j = 0
         self.i = 0
+        self._setup()
     
     def _setup(self):
-        """Sets the intial permutation in the state array S."""
-        while self.i < 256:
-            self.j = (self.j + self.S[self.i] + self.key[self.i % 16]) % 256
-            self.S[self.i], self.S[self.j] = self.S[self.j], self.S[self.i]
+        """Sets the intial permutation in the state array S and drops intial bytes to fix statistical bias."""
+        j = 0
 
-            self.i += 1
+        for k in range(256):
+            j = (j + self.S[k] + self.key[k % self.key_length]) % 256
+            self.S[k], self.S[j] = self.S[j], self.S[k]
+        
+        for _ in range(self.warmup_bytes):
+            self._clock()
     
     def _clock(self) -> int:
         """Clocks the cipher and returns one byte."""
@@ -70,4 +75,11 @@ class RC4:
         self.S[self.i], self.S[self.j] = self.S[self.j], self.S[self.i]
 
         output = self.S[(self.S[self.i] + self.S[self.j]) % 256]
+        return output
+    
+    def keystream(self, length:int) -> list[int]:
+        """Generates a keystream of the specified length in bytes."""
+        output = []
+        for _ in range(length):
+            output.append(self._clock())
         return output
